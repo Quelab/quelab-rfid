@@ -2,6 +2,7 @@
 #include "RFIDRdm630.h"
 #include "Arduhdlc.h"
 #include <ArduinoJson.h>
+#include <elapsedMillis.h>
 
 typedef enum {
   closed = 0,
@@ -67,6 +68,14 @@ int i = 0;
 RFIDtag  tag;  // RFIDtag object
 RFIDRdm630 reader = RFIDRdm630(rxPin,txPin);
 
+// Timer
+elapsedMillis lock_timer;
+elapsedMillis status_of_health_timer;
+const unsigned int unlocked_interval = 5000; /* Lock is open for 5 seconds */
+const unsigned int status_of_health_interval = 30000; /* health status every 30s */
+
+boolean lock_timer_active;
+
 /* Function to send out byte/char */
 void send_character(uint8_t data);
 
@@ -87,7 +96,19 @@ void send_character(uint8_t data) {
 /* Frame handler function. What to do with received data? */
 void hdlc_frame_handler(const uint8_t *data, uint16_t length) {
     // Do something with data that is in framebuffer
-    digitalWrite(lock_ctrl, HIGH);
+    JsonObject& root = jsonBuffer.parseObject(data);
+    if (root.success()) {
+        String command = root["message"];
+        if (command == "lock_ctrl"){
+            bool unlock = root["unlock"];
+            if (unlock == true){
+                unlockDoor();
+            } else {
+                lockDoor();
+            }
+        }
+    }
+    jsonBuffer.clear(); // global buffer is not reused otherwise
 }
 
 void sendStatus(){
@@ -96,6 +117,7 @@ void sendStatus(){
 
     root["door_open"] = (door_status.debounced_door_state == open)? true: false;
     root["locked"] = (lock_status.debounced_lock_state == locked)? true: false;
+    root["lock_open"] = (digitalRead(lock_ctrl)? true: false);
     root["open_sign_on"] =   (open_sign_state == open)? true: false;
     send_message_size = root.printTo(send_message_buffer, max_message_size);
     hdlc.frameDecode(send_message_buffer, send_message_size);
@@ -129,12 +151,15 @@ char switchState(switch_status_t *switch_status) {
   return switch_status->debounced_door_state;
 }
 
-void setLockState(lock_state_t lock_state){
-    if (lock_state == locked){
+void lockDoor(){
+    lock_timer_active = false;
+    digitalWrite(lock_ctrl, LOW);
+}
 
-    } else {
-
-    }
+void unlockDoor(){
+    lock_timer = 0;
+    lock_timer_active = true;
+    digitalWrite(lock_ctrl, HIGH);
 }
 
 void processSwitches() {
@@ -181,6 +206,8 @@ void setup() {
     digitalWrite(red_led, !lock_status.debounced_lock_state);
     digitalWrite(lock_ctrl, LOW);
 
+    lock_timer_active = false;
+
     // initialize serial port to 9600 baud
     Serial.begin(9600);
 }
@@ -191,11 +218,12 @@ void loop() {
         sendTagInfo(&tag);
     }
     processSwitches();
-    if (i < 10000){
-        i++;
-    } else {
-        i = 0;
+    if (status_of_health_timer >= status_of_health_interval){
+        status_of_health_timer -= status_of_health_interval;
         sendStatus();
+    }
+    if (lock_timer_active && lock_timer >= unlocked_interval){
+        lockDoor();
     }
 }
 
