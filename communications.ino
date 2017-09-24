@@ -93,6 +93,17 @@ void send_character(uint8_t data) {
     Serial.print((char)data);
 }
 
+void lockDoor(){
+    lock_timer_active = false;
+    digitalWrite(lock_ctrl, LOW);
+}
+
+void unlockDoor(){
+    lock_timer = 0;
+    lock_timer_active = true;
+    digitalWrite(lock_ctrl, HIGH);
+}
+
 /* Frame handler function. What to do with received data? */
 void hdlc_frame_handler(const uint8_t *data, uint16_t length) {
     // Do something with data that is in framebuffer
@@ -114,7 +125,6 @@ void hdlc_frame_handler(const uint8_t *data, uint16_t length) {
 void sendStatus(){
     JsonObject& root = jsonBuffer.createObject();
     root["message"] = "status";
-
     root["door_open"] = (door_status.debounced_door_state == open)? true: false;
     root["locked"] = (lock_status.debounced_lock_state == locked)? true: false;
     root["lock_open"] = (digitalRead(lock_ctrl)? true: false);
@@ -149,17 +159,6 @@ char switchState(switch_status_t *switch_status) {
     switch_status->debounced_door_state = current_state;
   }
   return switch_status->debounced_door_state;
-}
-
-void lockDoor(){
-    lock_timer_active = false;
-    digitalWrite(lock_ctrl, LOW);
-}
-
-void unlockDoor(){
-    lock_timer = 0;
-    lock_timer_active = true;
-    digitalWrite(lock_ctrl, HIGH);
 }
 
 void processSwitches() {
