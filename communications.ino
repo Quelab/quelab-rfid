@@ -57,11 +57,9 @@ const unsigned int red_led = 5;   // Turn on to indicate  locked key
 const unsigned int green_led = 6; // Turn on to indicate unlocked key
 const unsigned int door_contact = 7; // Is low when contact switch indicates door is closed
 const unsigned int lock_contact = 8; // Is low when electronic lock indicates door is unlocked
-const unsigned int open_sign = 11; // Set low to turn on the OPEN sign
 
 switch_status_t door_status;
 switch_status_t lock_status;
-switch_state_t  open_sign_state;
 int i = 0;
 
 // RFID
@@ -128,7 +126,6 @@ void sendStatus(){
     root["door_open"] = (door_status.debounced_door_state == open)? true: false;
     root["locked"] = (lock_status.debounced_lock_state == locked)? true: false;
     root["lock_open"] = (digitalRead(lock_ctrl)? true: false);
-    root["open_sign_on"] =   (open_sign_state == open)? true: false;
     send_message_size = root.printTo(send_message_buffer, max_message_size);
     hdlc.frameDecode(send_message_buffer, send_message_size);
     jsonBuffer.clear(); // global buffer is not reused otherwise
@@ -147,9 +144,9 @@ void sendTagInfo(RFIDtag  *tag){
 char switchState(switch_status_t *switch_status) {
 
   unsigned long newtime;
-  unsigned char current_state;
+  switch_state_t current_state;
 
-  current_state = digitalRead(switch_status->input_pin);
+  current_state = (switch_state_t) digitalRead(switch_status->input_pin);
   newtime=millis();
 
   if(current_state != switch_status->last_door_state) {
@@ -187,7 +184,6 @@ void setup() {
     pinMode(green_led, OUTPUT);
     pinMode(door_contact, INPUT);
     pinMode(lock_contact, INPUT);
-    pinMode(open_sign, OUTPUT);
 
     door_status.input_pin = door_contact;
     door_status.last_door_state = open;
@@ -199,8 +195,6 @@ void setup() {
     lock_status.debounced_lock_state = locked;
     lock_status.last_change_time = 0;
 
-    open_sign_state = closed;
-    digitalWrite(open_sign, open_sign_state);
     digitalWrite(green_led, lock_status.debounced_lock_state);
     digitalWrite(red_led, !lock_status.debounced_lock_state);
     digitalWrite(lock_ctrl, LOW);

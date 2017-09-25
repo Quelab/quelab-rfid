@@ -52,14 +52,14 @@ The HDLC implementation is taken from a library found online and modified to use
 * [CRC FAQ](http://www.ross.net/crc/download/crc_v3.txt)
 
 ## Protocol Application Layer
-The application layer protocol is simply [JSON](www.json.org). JSON is probably an unexpected choice for arduino communications because it is super verbose and would be a waste of memory for complicated applications. I attempted to use Google's [MessagePack](http://msgpack.org/index.html) initially, but couldn't find a library that played nicely with the HLDC used for communications. One advantage of JSON though is it is widely supported in all programming languages w/o add on libraries and it is human readable.
-This makes it easy to write a PC application that communicates with the Arduino.
+The application layer protocol is simply [JSON](www.json.org). JSON is probably an unexpected choice for arduino communications because it is super verbose and would be a waste of memory for complicated applications. I attempted to use Google's [MessagePack](http://msgpack.org/index.html) initially, but couldn't find a library that played nicely with the HLDC used for communications. One advantage of JSON though is it is widely supported in all programming languages w/o add on libraries and it is human readable. In the future it may be necessary to increase the [ArduinoJSON buffer](https://bblanchon.github.io/ArduinoJson/assistant/) if larger messages are necessary.
+JSON makes it easy to write a PC application that communicate with the Arduino.
 
 ### Example Communications:
 
 #### Status of Health Message (Arduino &rarr; PC)
 ```json
-{"message":"status","door_open":true,"locked":true,"lock_open":false,"open_sign_on":false}
+{"message":"status","door_open":true,"locked":true,"lock_open":false}
 ```
 #### RFID Read Message (Arduino &rarr; PC)
 ```json
