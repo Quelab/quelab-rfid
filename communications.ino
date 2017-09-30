@@ -14,6 +14,12 @@ typedef enum {
   locked = 1
 } lock_state_t;
 
+typedef enum {
+  no_action = 0,
+  lock_door = 1,
+  unlock_door = 2
+} action_flags_t;
+
 typedef struct switch_status {
     uint32_t last_change_time;
     uint8_t input_pin;
@@ -73,6 +79,7 @@ const unsigned int unlocked_interval = 5000; /* Lock is open for 5 seconds */
 const unsigned int status_of_health_interval = 30000; /* health status every 30s */
 
 boolean lock_timer_active;
+action_flags_t action_flag = no_action;
 
 /* Function to send out byte/char */
 void send_character(uint8_t data);
@@ -111,9 +118,9 @@ void hdlc_frame_handler(const uint8_t *data, uint16_t length) {
         if (command == "lock_ctrl"){
             bool unlock = root["unlock"];
             if (unlock == true){
-                unlockDoor();
+                action_flag = unlock_door;
             } else {
-                lockDoor();
+                action_flag = lock_door;
             }
         }
     }
@@ -206,17 +213,29 @@ void setup() {
 }
 
 void loop() {
+    processSwitches();
+
     if (reader.isAvailable()){  // tests if a card was read by the module
         tag = reader.getTag();  // if true, then receives a tag object
         sendTagInfo(&tag);
     }
-    processSwitches();
     if (status_of_health_timer >= status_of_health_interval){
         status_of_health_timer -= status_of_health_interval;
         sendStatus();
     }
     if (lock_timer_active && lock_timer >= unlocked_interval){
         lockDoor();
+        sendStatus();
+    }
+    if (action_flag == lock_door){
+        lockDoor();
+        sendStatus();
+        action_flag = no_action;
+    }
+    if (action_flag == unlock_door){
+        unlockDoor();
+        sendStatus();
+        action_flag = no_action;
     }
 }
 

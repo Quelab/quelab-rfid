@@ -35,6 +35,7 @@ Other Commands available:
 * [Schlage Electronic Lock](https://www.amazon.com/dp/B001GPL5WU/ref=asc_df_B001CO9RJS5183835/?tag=hyprod-20&creative=394997&creativeASIN=B001CO9RJS&linkCode=df0&hvadid=167141158985&hvpos=1o4&hvnetw=g&hvrand=1431498778769732014&hvpone=&hvptwo=&hvqmt=&hvdev=c&hvdvcmdl=&hvlocint=&hvlocphy=9030452&hvtargid=pla-275433015017&th=1)
 * [Arduino Nano](https://store.arduino.cc/usa/arduino-nano)
 * [RDM6300](https://www.itead.cc/wiki/RDM6300)
+    - clock drift is pretty severe on the device I bought. I have to restart the device once a day to be able to effectively read cards again.
 
 ![lock](img/lock.jpg) ![lock2](img/lock2.jpg) ![board](img/board_in_situ.jpg)
 
